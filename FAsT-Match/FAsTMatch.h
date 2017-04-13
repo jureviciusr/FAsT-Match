@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <opencv2/opencv.hpp>
+#include <iterator>
 
 #include "MatchNet.h"
 #include "MatchConfig.h"
@@ -26,7 +27,8 @@ namespace fast_match {
         void init( float epsilon = 0.15f, float delta = 0.25f, bool photometric_invariance = false,
                    float min_scale = 0.5f, float max_scale = 2.0f );
         
-        vector<Point2f> apply(Mat& image, Mat& templ);
+        vector<Point2f> apply(Mat &image, Mat &templ, double &best_distance,
+                              float min_rotation = (float) -M_PI, float max_rotation = (float) M_PI);
         
     protected:
         Mat image, templ;

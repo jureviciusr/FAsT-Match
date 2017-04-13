@@ -29,10 +29,8 @@ namespace fast_match {
         this->maxScale              = max_scale;
     }
 
-    /**
-     * Apply Fast Template Matching algorithm
-     */
-    vector<Point2f> FAsTMatch::apply(Mat& original_image, Mat& original_template ) {
+    vector<Point2f> FAsTMatch::apply(Mat &original_image, Mat &original_template, double &best_distance, float min_rotation,
+                                         float max_rotation) {
         /* Preprocess the image and template first */
         image = preprocessImage( original_image );
         templ = preprocessImage( original_template  );
@@ -45,13 +43,11 @@ namespace fast_match {
         float   min_trans_x  = -(r2x - r1x * minScale),
                 max_trans_x  = -min_trans_x,
                 min_trans_y  = -(r2y - r1y * minScale),
-                max_trans_y  = -min_trans_y,
-                min_rotation = -M_PI,
-                max_rotation =  M_PI;
-        
+                max_trans_y  = -min_trans_y;
+
         /* Create the matching grid / net */
-        MatchNet net( templ.cols, templ.rows, delta, min_trans_x, max_trans_x, min_trans_y, max_trans_y,
-                       min_rotation, max_rotation, minScale, maxScale );
+        MatchNet net(templ.cols, templ.rows, delta, min_trans_x, max_trans_x, min_trans_y, max_trans_y,
+                     min_rotation, max_rotation, minScale, maxScale );
         
         /* Smooth our images */
         GaussianBlur( templ, templ, Size(0, 0), 2.0, 2.0 );
@@ -75,7 +71,6 @@ namespace fast_match {
         MatchConfig best_config;
         Mat best_trans;
         vector<double> best_distances(20, 0.0);
-        double best_distance;
         vector<double> distances;
         vector<bool> insiders;
         
@@ -307,10 +302,10 @@ namespace fast_match {
             Mat affine_corners = (affine * corners).t();
             affine_corners =  affine_corners + transl;
             
-            if( WITHIN( affine_corners.at<Point2f>(0), top_left, bottom_right) &&
-                WITHIN( affine_corners.at<Point2f>(1), top_left, bottom_right) &&
-                WITHIN( affine_corners.at<Point2f>(2), top_left, bottom_right) &&
-                WITHIN( affine_corners.at<Point2f>(3), top_left, bottom_right) ) {
+            if( WITHIN( affine_corners.at<Point2f>(0, 0), top_left, bottom_right) &&
+                WITHIN( affine_corners.at<Point2f>(1, 0), top_left, bottom_right) &&
+                WITHIN( affine_corners.at<Point2f>(2, 0), top_left, bottom_right) &&
+                WITHIN( affine_corners.at<Point2f>(3, 0), top_left, bottom_right) ) {
                 
                 affines[i]  = affine;
                 insiders[i] = true;
@@ -384,7 +379,10 @@ namespace fast_match {
                     int target_x = int( a11 * xs_ptr_cent[j] + a12 * ys_ptr_cent[j] + tmp_1 ),
                         target_y = int( a21 * xs_ptr_cent[j] + a22 * ys_ptr_cent[j] + tmp_2 );
                     
-                    score += abs(vals_i1[j] - padded.at<float>(target_y - 1, target_x - 1) );
+                    //score += abs(vals_i1[j] - padded.at<float>(target_y - 1, target_x - 1) );
+                    if (target_x - 1 >= 0 && target_x - 1 < padded.size().width)
+                    	score += abs(vals_i1[j] - padded.at<float>(target_y - 1, target_x - 1) );
+
                 }
             }
             else {
